@@ -6,9 +6,7 @@ A menu bar app that watches your npm global packages (`npm install -g`) and
 npm itself, and lets you upgrade them with one click from the macOS status
 bar.
 
-It's a standalone macOS app built with SwiftUI's `MenuBarExtra`
-(`NpmMenuBar.app`) — no external menu bar runner (e.g. SwiftBar) is
-required. It works with major version managers (Volta, nvm, fnm, ...).
+It works with major version managers (Volta, nvm, fnm, ...).
 
 ## Download
 

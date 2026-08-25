@@ -5,9 +5,7 @@
 npmのグローバルパッケージ(`npm install -g`)とnpm本体の更新をmacOSのメニュー
 バーで監視し、ワンクリックでupgradeできる常駐アプリ。
 
-外部の常駐ツール(SwiftBar等)には依存せず、SwiftUIの`MenuBarExtra`で作った
-単体のmacOSアプリ(`NpmMenuBar.app`)として動作する。Volta・nvm・fnmなど
-主要なバージョンマネージャに対応している。
+Volta・nvm・fnmなど主要なバージョンマネージャに対応している。
 
 ## ダウンロード
 
