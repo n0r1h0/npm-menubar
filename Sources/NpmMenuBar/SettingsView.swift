@@ -12,11 +12,9 @@ struct SettingsView: View {
                 .tabItem { Label(l10n.string(.tabNpmCore), systemImage: "shippingbox") }
             CategorySettingsView(category: .packages, monitor: monitor)
                 .tabItem { Label(l10n.string(.tabPackages), systemImage: "cube.box") }
-            ExcludedSettingsView(monitor: monitor)
-                .tabItem { Label(l10n.string(.tabExcluded), systemImage: "pin.slash") }
         }
         .padding()
-        .frame(width: 380, height: 210)
+        .frame(width: 380, height: 300)
     }
 }
 
@@ -92,36 +90,36 @@ struct CategorySettingsView: View {
             Text(l10n.string(auto ? .autoUpgradeOnDescription : .autoUpgradeOffDescription))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        }
-        .padding()
-    }
-}
 
-struct ExcludedSettingsView: View {
-    @ObservedObject var monitor: NpmMonitor
-    @ObservedObject private var l10n = Localizer.shared
-
-    var body: some View {
-        if monitor.excludedNames.isEmpty {
-            VStack {
-                Spacer()
-                Text(l10n.string(.noExcludedPackages))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding()
-        } else {
-            List {
-                ForEach(monitor.excludedNames, id: \.self) { name in
-                    HStack {
-                        Text(name)
-                        Spacer()
-                        Button(l10n.string(.removeFromExclusion)) {
-                            monitor.setExcluded(name, false)
+            if category == .packages {
+                // "npm" itself is held through the separate npm-core hold
+                // menu, not this per-package list, so it's filtered out here.
+                let excludedNames = monitor.excludedNames.filter { $0 != "npm" }
+                Section(l10n.string(.excludedPackagesSectionFormat, excludedNames.count)) {
+                    if excludedNames.isEmpty {
+                        Text(l10n.string(.noExcludedPackages))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(excludedNames, id: \.self) { pkg in
+                                    HStack {
+                                        Text(pkg)
+                                        Spacer()
+                                        Button(l10n.string(.removeFromExclusion)) {
+                                            monitor.setExcluded(pkg, false)
+                                        }
+                                        .buttonStyle(.borderless)
+                                    }
+                                }
+                            }
                         }
+                        .frame(maxHeight: 100)
                     }
                 }
             }
         }
+        .padding()
     }
 }

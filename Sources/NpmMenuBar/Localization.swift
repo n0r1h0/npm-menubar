@@ -53,10 +53,13 @@ enum L10nKey: String {
     case packageVersionFormat
     case upgradeThis
     case excludeFromUpgrade
+    /// Shared exclude-from-bulk-upgrade wording for the per-package Toggle,
+    /// distinct from `excludeFromUpgrade` (a Button, npm-core-only — npm
+    /// core has no Homebrew-side equivalent to align with).
+    case excludeFromUpgradeAll
     case removeFromExclusion
-    case excludedSectionFormat
+    case excludedPackagesSectionFormat
     case coreOnHoldFormat
-    case tabExcluded
     case noExcludedPackages
     case upgradeFailedTitle
     case bundledNpmUpdateFormat
@@ -168,17 +171,14 @@ final class Localizer: ObservableObject {
         .packageVersionFormat: [.ja: "%@ (%@ → %@)", .en: "%@ (%@ → %@)"],
         .upgradeThis: [.ja: "このパッケージを更新", .en: "Upgrade This Package"],
         .excludeFromUpgrade: [.ja: "このバージョンで据え置く", .en: "Hold at This Version"],
-        .removeFromExclusion: [.ja: "据え置きを解除", .en: "Remove Hold"],
-        .excludedSectionFormat: [.ja: "据え置き中 (%d件)", .en: "On Hold (%d)"],
+        .excludeFromUpgradeAll: [.ja: "「すべて更新」の対象外にする", .en: "Exclude from Upgrade All"],
+        .removeFromExclusion: [.ja: "解除", .en: "Remove"],
+        .excludedPackagesSectionFormat: [.ja: "除外中のパッケージ (%d件)", .en: "Excluded Packages (%d)"],
         .coreOnHoldFormat: [
             .ja: "npm: %@ → %@ (据え置き中)",
             .en: "npm: %@ → %@ (On Hold)"
         ],
-        .tabExcluded: [.ja: "据え置き中", .en: "On Hold"],
-        .noExcludedPackages: [
-            .ja: "据え置き中のパッケージはありません",
-            .en: "No packages are on hold"
-        ],
+        .noExcludedPackages: [.ja: "対象はありません", .en: "None"],
         .upgradeFailedTitle: [.ja: "更新に失敗しました", .en: "Upgrade Failed"],
         .bundledNpmUpdateFormat: [
             .ja: "npm (Node同梱): %@ → %@ (更新あり)",

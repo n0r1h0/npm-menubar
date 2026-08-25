@@ -29,9 +29,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
     <key>CFBundleIdentifier</key>
     <string>com.local.npmmenubar</string>
     <key>CFBundleVersion</key>
-    <string>0.1</string>
+    <string>0.2</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1</string>
+    <string>0.2</string>
     <key>CFBundleExecutable</key>
     <string>$APP_NAME</string>
     <key>CFBundleIconFile</key>

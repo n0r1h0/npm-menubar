@@ -12,12 +12,14 @@ struct OutdatedPackage: Identifiable, Equatable {
 @MainActor
 final class NpmMonitor: ObservableObject {
     @Published var npmCoreOutdated: OutdatedPackage?
+    /// Every outdated global package, including ones the user pinned — they
+    /// stay in this one list (marked with 📌 in the menu) rather than being
+    /// split into a separate "on hold" collection.
     @Published var packagesOutdated: [OutdatedPackage] = []
     /// Outdated entries the user chose to hold at their current version.
     /// Kept visible (so they can be un-excluded) but excluded from the
     /// pending badge/count, notifications, and "Upgrade All" / auto-upgrade.
     @Published var excludedCoreOutdated: OutdatedPackage?
-    @Published var excludedPackagesOutdated: [OutdatedPackage] = []
     /// Every package name registered as held, regardless of whether it's
     /// currently outdated — this is what the Preferences window lists.
     @Published private(set) var excludedNames: [String] = []
@@ -157,6 +159,13 @@ final class NpmMonitor: ObservableObject {
         settings.isExcluded(packageName)
     }
 
+    /// `packagesOutdated` minus the ones the user pinned via exclusion —
+    /// this is what "Upgrade All" / auto-upgrade actually acts on.
+    var upgradablePackages: [OutdatedPackage] {
+        let excluded = settings.excludedPackages()
+        return packagesOutdated.filter { !excluded.contains($0.name) }
+    }
+
     /// Re-splits the last fetched result under the new exclusion state
     /// without re-running npm, so toggling exclusion from the menu feels
     /// instant.
@@ -206,8 +215,9 @@ final class NpmMonitor: ObservableObject {
             beginBusy()
             defer { endBusy() }
             lastUpgradeError = nil
-            guard !packagesOutdated.isEmpty else { return }
-            let specs = packagesOutdated.map { "\($0.name)@\($0.latest)" }
+            let targets = upgradablePackages
+            guard !targets.isEmpty else { return }
+            let specs = targets.map { "\($0.name)@\($0.latest)" }
             let result = await runUpgrade(specs)
             if result.status != 0 {
                 reportUpgradeFailure(result.output)
@@ -230,8 +240,9 @@ final class NpmMonitor: ObservableObject {
                     reportUpgradeFailure(coreResult.output)
                 }
             }
-            if !packagesOutdated.isEmpty {
-                let specs = packagesOutdated.map { "\($0.name)@\($0.latest)" }
+            let targets = upgradablePackages
+            if !targets.isEmpty {
+                let specs = targets.map { "\($0.name)@\($0.latest)" }
                 let packagesResult = await runUpgrade(specs)
                 if packagesResult.status != 0 {
                     reportUpgradeFailure(packagesResult.output)
@@ -375,25 +386,27 @@ final class NpmMonitor: ObservableObject {
             .filter { $0.name != "npm" }
             .sorted { $0.name < $1.name }
         let excludedNames = settings.excludedPackages()
-        let names = all.filter { !excludedNames.contains($0.name) }
-        excludedPackagesOutdated = all.filter { excludedNames.contains($0.name) }
+        let upgradable = all.filter { !excludedNames.contains($0.name) }
+        let previousUpgradableCount = packagesOutdated
+            .filter { !excludedNames.contains($0.name) }
+            .count
 
-        let previousCount = packagesOutdated.count
-        packagesOutdated = names
+        packagesOutdated = all
 
-        if !names.isEmpty && names.count != previousCount {
+        if !upgradable.isEmpty && upgradable.count != previousUpgradableCount {
             notify(
                 title: Localizer.shared.string(.tabPackages),
-                body: Localizer.shared.string(.notifyCountBodyFormat, names.count)
+                body: Localizer.shared.string(.notifyCountBodyFormat, upgradable.count)
             )
         }
 
-        if !names.isEmpty && settings.autoUpgrade(for: .packages) {
+        if !upgradable.isEmpty && settings.autoUpgrade(for: .packages) {
             Task {
-                let specs = names.map { "\($0.name)@\($0.latest)" }
+                let specs = upgradable.map { "\($0.name)@\($0.latest)" }
                 let result = await runUpgrade(specs)
                 if result.status == 0 {
-                    packagesOutdated = []
+                    let upgradedNames = Set(upgradable.map { $0.name })
+                    packagesOutdated = packagesOutdated.filter { !upgradedNames.contains($0.name) }
                 } else {
                     reportUpgradeFailure(result.output)
                 }

@@ -34,7 +34,7 @@ struct MenuBarContentView: View {
 
         Divider()
 
-        if monitor.npmCoreOutdated != nil || !monitor.packagesOutdated.isEmpty {
+        if monitor.npmCoreOutdated != nil || !monitor.upgradablePackages.isEmpty {
             Button(l10n.string(.upgradeAllPendingFormat, totalPendingCount)) {
                 monitor.upgradeAllPending()
             }
@@ -45,24 +45,12 @@ struct MenuBarContentView: View {
             if monitor.packagesOutdated.isEmpty {
                 Text(l10n.string(.upToDate))
             } else {
-                Button(l10n.string(.upgradeAll)) { monitor.upgradeAllPackages() }
-                Divider()
-                ForEach(monitor.packagesOutdated) { pkg in
-                    Menu(l10n.string(.packageVersionFormat, pkg.name, pkg.current, pkg.latest)) {
-                        Button(l10n.string(.upgradeThis)) { monitor.upgrade(package: pkg.name, toVersion: pkg.latest) }
-                        Button(l10n.string(.excludeFromUpgrade)) { monitor.setExcluded(pkg.name, true) }
-                    }
+                if !monitor.upgradablePackages.isEmpty {
+                    Button(l10n.string(.upgradeAll)) { monitor.upgradeAllPackages() }
+                    Divider()
                 }
-            }
-        }
-
-        if !monitor.excludedPackagesOutdated.isEmpty {
-            Menu(l10n.string(.excludedSectionFormat, monitor.excludedPackagesOutdated.count)) {
-                ForEach(monitor.excludedPackagesOutdated) { pkg in
-                    Menu(l10n.string(.packageVersionFormat, pkg.name, pkg.current, pkg.latest)) {
-                        Button(l10n.string(.upgradeThis)) { monitor.upgrade(package: pkg.name, toVersion: pkg.latest) }
-                        Button(l10n.string(.removeFromExclusion)) { monitor.setExcluded(pkg.name, false) }
-                    }
+                ForEach(monitor.packagesOutdated) { pkg in
+                    packageMenu(pkg: pkg)
                 }
             }
         }
@@ -113,12 +101,28 @@ struct MenuBarContentView: View {
         }
     }
 
+    /// A 📌 marker on the name plus a shared "exclude from Upgrade All"
+    /// toggle, instead of a separate on-hold list — held packages stay put
+    /// in the same menu.
+    @ViewBuilder
+    private func packageMenu(pkg: OutdatedPackage) -> some View {
+        let excluded = monitor.isExcluded(pkg.name)
+        let label = l10n.string(.packageVersionFormat, pkg.name, pkg.current, pkg.latest)
+        Menu(excluded ? "📌 \(label)" : label) {
+            Button(l10n.string(.upgradeThis)) { monitor.upgrade(package: pkg.name, toVersion: pkg.latest) }
+            Toggle(l10n.string(.excludeFromUpgradeAll), isOn: Binding(
+                get: { monitor.isExcluded(pkg.name) },
+                set: { monitor.setExcluded(pkg.name, $0) }
+            ))
+        }
+    }
+
     private var currentNpmVersion: String {
         monitor.npmCoreOutdated?.current ?? monitor.excludedCoreOutdated?.current ?? ""
     }
 
     private var totalPendingCount: Int {
-        monitor.packagesOutdated.count + (monitor.npmCoreOutdated != nil ? 1 : 0)
+        monitor.upgradablePackages.count + (monitor.npmCoreOutdated != nil ? 1 : 0)
     }
 
     private var bundledPendingCount: Int {

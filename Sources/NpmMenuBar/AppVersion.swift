@@ -5,7 +5,7 @@ enum AppVersion {
 
     /// Bump this together with CFBundleShortVersionString in Info.plist and
     /// Scripts/build-app.sh whenever a release is cut.
-    static let releaseVersion = "0.1"
+    static let releaseVersion = "0.2"
 
     /// `swift build` (no `-c release`) defines DEBUG, so a dev build always
     /// shows a random suffix to make it obvious it isn't the release binary.
